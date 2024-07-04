@@ -334,9 +334,9 @@
           </div>
 
           <!-- Instagram list -->
-          <div class="col-md-8" id="divInstagramList" #divInstagramList *ngIf="gathered['instagram'] && gathered['instagram'].result[4] && gathered['instagram'].result[4].graphic[10].postdet?.length > 0 && validationShow[gathered['instagram'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
-            <ngx-instagram-list [data]="gathered['instagram']"></ngx-instagram-list>
-          </div>
+          <!-- <div class="col-md-8" id="divInstagramList" #divInstagramList *ngIf="gathered['instagram'] && gathered['instagram'].result[4] && gathered['instagram'].result[4].graphic[10].postdet?.length > 0 && validationShow[gathered['instagram'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage=""> -->
+          <!--   <ngx-instagram-list [data]="gathered['instagram']"></ngx-instagram-list> -->
+          <!-- </div> -->
 
           <!-- Instagram mediatype -->
           <div class="col-md-4" id="divInstagramMediatype" #divInstagramMediatype *ngIf="gathered['instagram'] && gathered['instagram'].result[4] && gathered['instagram'].result[4].graphic[8].mediatype?.length > 0 && validationShow[gathered['instagram'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
@@ -744,7 +744,8 @@
           </div>
           <label for="inputInstagram" class="col-sm-1 col-form-label" nbTooltip="Posible Instagram Account (Used in instagram module)" nbTooltipStatus="primary" style="text-align: center;"><i class="fab fa-instagram fa-2x"></i></label>
           <div class="col-sm-3">
-            <input type="text" class="form-control" #instagram id="instagram" placeholder="Instagram - disabled" disabled autocomplete="off" style="background-color: rgba(0, 0, 0,0.5); border: none;">
+            <!-- <input type="text" class="form-control" #instagram id="instagram" placeholder="Instagram - disabled" disabled autocomplete="off" style="background-color: rgba(0, 0, 0,0.5); border: none;"> -->
+            <input type="text" class="form-control" #instagram id="instagram" placeholder="Instagram" autocomplete="off" style="background-color: rgba(0, 0, 0,0.5); border: none;">
           </div>
           <label for="inputLinkedin" class="col-sm-1 col-form-label" nbTooltip="Posible Linkedin Account (Used in linkedin module)" nbTooltipStatus="primary" style="text-align: center;"><i class="fab fa-linkedin fa-2x"></i></label>
           <div class="col-sm-3">

@@ -131,17 +131,17 @@ Below is a table with all the fields to fill out
 |   **Module**   | **Status** | **Field in apikey** | **Description** |
 | :------------- | :--------: | :--------- | :--------- |
 | Fullcontact    | :octagonal\_sign: |  | Discontinued |
-| PeopleDataLabs | :warning: |  | In revision |
+| PeopleDataLabs | :ok: | peopledatalabs\_key | :free: API **Free**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#peopledatalabs) |
 | Linkedin | :ok: | linkedin\_li\_at / linkedin\_JSESSIONID [\(***\)](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#postdata) | :free: Cookie browser(:cookie:) method. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#linkedin) |
 | Twitter        | :ok: | twitter\_user / twitter\_pass [\(***\)](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#postdata) | :free: Cookie browser(:cookie:) or user/pass. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#twitter) |
-| Instagram      | :warning: |  | In revision |
+| Instagram      | :ok: | instagram\_user / instagram\_pass [\(***\)](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#postdata) | :free: Cookie browser(:cookie:) or user/pass. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#instagram) |
 | HaveIBeenPwned | :ok: | haveibeenpwned\_key |:heavy\_dollar\_sign: API **Paid**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#haveibeenpwned) |
 | Emailrep       | :ok: | emailrep\_key | :free: API **Free**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#emailrep) |
 | Leaklookup     | :ok: | leaklookup\_key | :free: API **Free**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#leaklookup) |
 | Spotify        | :ok: | spotify\_client\_id / spotify\_client\_secret | :free: API **Free**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#spotify) |
 | Twitch         | :ok: | twitch\_client\_id / twitch\_client\_secret | :free: API **Free**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#twitch) |
 | CSE (Google)   | :ok: | cse\_api\_key / cse\_cx |:free: API **Free**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#cse) |
-
+| Reddit         | :warning: |  | In revision |
 
 <h1 id="update">Update iKy</h1>
 

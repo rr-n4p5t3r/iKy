@@ -53,8 +53,9 @@ def get_twitter_cookies(cookie_keys):
         try:
             for cookie in cookie_fn(domain_name=""):
 
-                if ('twitter' in cookie.domain):
+                if ('.x.com' in cookie.domain):
 
+                    print(f"COOKIE - {ref[index]}: {cookie}")
                     if (cookie.name in cookie_keys and not cookie.is_expired()):
                         json_cookie['browser'] = ref[index]
                         json_cookie[cookie.name] = cookie.value
@@ -82,7 +83,9 @@ def get_twitter_user_info(username):
     # Valid session
     app = tweety.Twitter("session")
 
-    cookie_keys = ["guest_id", "guest_id_marketing", "guest_id_ads", "kdt", "auth_token", "ct0", "twid", "personalization_id"]
+    # FIX: remove kdt
+    # cookie_keys = ["guest_id", "guest_id_marketing", "guest_id_ads", "kdt", "auth_token", "ct0", "twid", "personalization_id"]
+    cookie_keys = ["guest_id", "guest_id_marketing", "guest_id_ads", "auth_token", "ct0", "twid", "personalization_id"]
     json_cookies = get_twitter_cookies(cookie_keys)
 
     if json_cookies["found"]:
