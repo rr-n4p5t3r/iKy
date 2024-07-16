@@ -105,6 +105,15 @@ import { DorksHashtagComponent } from './dorks/dorks-hashtag/dorks-hashtag.compo
 import { DorksEmailComponent } from './dorks/dorks-email/dorks-email.component';
 
 import { TiktokGraphsComponent } from './tiktok/tiktok-graphs/tiktok-graphs.component';
+import { TiktokVideosComponent } from './tiktok/tiktok-videos/tiktok-videos.component';
+import { TiktokHashtagComponent } from './tiktok/tiktok-hashtag/tiktok-hashtag.component';
+// import { TiktokMentionComponent } from './tiktok/tiktok-mention/tiktok-mention.component';
+// import { TiktokTaggedComponent } from './tiktok/tiktok-tagged/tiktok-tagged.component';
+import { TiktokHourComponent } from './tiktok/tiktok-hour/tiktok-hour.component';
+import { TiktokWeekComponent } from './tiktok/tiktok-week/tiktok-week.component';
+import { TiktokPostsComponent } from './tiktok/tiktok-posts/tiktok-posts.component';
+import { TiktokResumeComponent } from './tiktok/tiktok-resume/tiktok-resume.component';
+import { TiktokTimelineComponent } from './tiktok/tiktok-timeline/tiktok-timeline.component';
 
 import { SherlockGraphComponent } from './sherlock/sherlock-graphs/sherlock-graphs.component';
 import { SherlockListComponent } from './sherlock/sherlock-list/sherlock-list.component';
@@ -249,6 +258,15 @@ import { ErrorGraphsComponent } from './error/error-graphs.component';
     DorksEmailComponent,
     DorksSearchesComponent,
     TiktokGraphsComponent,
+    TiktokVideosComponent,
+    TiktokHashtagComponent,
+    // TiktokMentionComponent,
+    // TiktokTaggedComponent,
+    TiktokHourComponent,
+    TiktokWeekComponent,
+    TiktokPostsComponent,
+    TiktokResumeComponent,
+    TiktokTimelineComponent,
     SkypeComponent,
     TaskexecComponent,
     // FsIconComponent,
