@@ -142,6 +142,7 @@ Below is a table with all the fields to fill out
 | Twitch         | :ok: | twitch\_client\_id / twitch\_client\_secret | :free: API **Free**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#twitch) |
 | CSE (Google)   | :ok: | cse\_api\_key / cse\_cx |:free: API **Free**. Explained [here](https://gitlab.com/kennbroorg/iKy/-/wikis/APIs/ApiKeys-get#cse) |
 | Reddit         | :warning: |  | In revision |
+| Tiktok         | :ok: |  | Get from your preferred browser. Just log in with your user |
 
 <h1 id="update">Update iKy</h1>
 

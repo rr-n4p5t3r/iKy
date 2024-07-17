@@ -468,18 +468,64 @@
 
           <!-- Tiktok graphs-->
           <div class="col-md-4" id="divTiktokSocial" #divTiktokSocial 
-            *ngIf="gathered['tiktok'] && gathered['tiktok'].result[3] && ((gathered['tiktok'].result[4] && gathered['tiktok'].result[4].graphic[0].tiktok?.length > 1) || (gathered['data'] && gathered['data'].tiktok != ''))"
+            *ngIf="gathered['tiktok'] && gathered['tiktok'].result[4] && ((gathered['tiktok'].result[4] && gathered['tiktok'].result[4].graphic[0].tiktok?.length > 1) || (gathered['data'] && gathered['data'].tiktok != ''))"
             [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
             <ngx-tiktok-graphs [data]="gathered['tiktok']"></ngx-tiktok-graphs>
           </div>
 
+          <!-- Tiktok Timeline -->
+          <div class="col-md-4" id="divTiktokTimeline" #divTiktokTimeline 
+            *ngIf="gathered['tiktok'] && gathered['tiktok'].result[4] && validationShow[gathered['tiktok'].result[2]['validation']] && ((gathered['tiktok'].result[4] && gathered['tiktok'].result[4].graphic[9].tiktime?.length > 1))"
+            [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+              <ngx-tiktok-timeline [data]="gathered['tiktok']"></ngx-tiktok-timeline>
+          </div>
+
+          <!-- Tiktok Posts -->
+          <div class="col-md-4" id="divTiktokPosts" #divTiktokPosts 
+            *ngIf="gathered['tiktok'] && gathered['tiktok'].result[4] && validationShow[gathered['tiktok'].result[2]['validation']] && ((gathered['tiktok'].result[4] && gathered['tiktok'].result[4].graphic[1].postslist?.length > 1))"
+            [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+            <ngx-tiktok-posts [data]="gathered['tiktok']"></ngx-tiktok-posts>
+          </div>
+
+          <!-- Tikok hour -->
+          <div class="col-md-4" id="divTikokHour" #divTikokHour *ngIf="gathered['tiktok'] && gathered['tiktok'].result[4] && gathered['tiktok'].result[4].graphic[5].hour?.length > 0 && validationShow[gathered['tiktok'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+            <ngx-tiktok-hour [data]="gathered['tiktok']"></ngx-tiktok-hour>
+          </div>
+
+          <!-- Tikok hashtag -->
+          <div class="col-md-4" id="divTikokHashtag" #divTikokHashtag 
+            *ngIf="gathered['tiktok'] && gathered['tiktok'].result[4] && gathered['tiktok'].result[4].graphic[2].hashtags?.length > 0 && validationShow[gathered['tiktok'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+            <ngx-tiktok-hashtag [data]="gathered['tiktok']"></ngx-tiktok-hashtag>
+          </div>
+
+          <!-- Tikok week -->
+          <div class="col-md-4" id="divTikokWeek" #divTikokWeek 
+            *ngIf="gathered['tiktok'] && gathered['tiktok'].result[4] && gathered['tiktok'].result[4].graphic[6].week?.length > 0 && validationShow[gathered['tiktok'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+            <ngx-tiktok-week [data]="gathered['tiktok']"></ngx-tiktok-week>
+          </div>
+
+          <!-- Tiktok videos -->
+          <div class="col-md-4" id="divTiktokVideos" #divTiktokVideos 
+            *ngIf="gathered['tiktok'] && gathered['tiktok'].result[4] && ((gathered['tiktok'].result[4] && gathered['tiktok'].result[4].graphic[7].videos?.length > 1) || (gathered['data'] && gathered['data'].tiktok != ''))"
+            [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+            <ngx-tiktok-videos [data]="gathered['tiktok']"></ngx-tiktok-videos>
+          </div>
+
+          <!-- Tikok Resume -->
+          <div class="col-md-4" id="divTikokResume" #divTikokResume 
+            *ngIf="gathered['tiktok'] && gathered['tiktok'].result[4] &&  validationShow[gathered['tiktok'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+            <ngx-tiktok-resume [data]="gathered['tiktok']"></ngx-tiktok-resume>
+          </div>
+
           <!-- Tinder graphs-->
-          <div class="col-md-4" id="divTinderGraphs" #divTinderGraphs *ngIf="gathered['tinder'] && gathered['tinder'].result[4] && gathered['tinder'].result[4].graphic[0].tinder?.length > 1 && validationShow[gathered['tinder'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+          <div class="col-md-4" id="divTinderGraphs" #divTinderGraphs 
+            *ngIf="gathered['tinder'] && gathered['tinder'].result[4] && gathered['tinder'].result[4].graphic[0].tinder?.length > 1 && validationShow[gathered['tinder'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
             <ngx-tinder-graphs [data]="gathered['tinder']"></ngx-tinder-graphs>
           </div>
 
           <!-- Venmo User -->
-          <div class="col-md-4" id="divVenmoUser" #divVenmoUser *ngIf="gathered['venmo'] && gathered['venmo'].result[4] && gathered['venmo'].result[4].graphic[0].user?.length > 1 && validationShow[gathered['venmo'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
+          <div class="col-md-4" id="divVenmoUser" #divVenmoUser 
+            *ngIf="gathered['venmo'] && gathered['venmo'].result[4] && gathered['venmo'].result[4].graphic[0].user?.length > 1 && validationShow[gathered['venmo'].result[2]['validation']]" [nbSpinner]="processing" nbSpinnerStatus="secondary" nbSpinnerSize="xxlarge" nbSpinnerMessage="">
             <ngx-venmo-graphs [data]="gathered['venmo']"></ngx-venmo-graphs>
           </div>
 
@@ -760,7 +806,7 @@
           </div>
           <label for="inputTiktok" class="col-sm-1 col-form-label" nbTooltip="Posible TikTok Account (Used in tiktok module)" nbTooltipStatus="primary" style="text-align: center;"><i class="fas fa-play-circle fa-2x"></i></label>
           <div class="col-sm-3">
-            <input type="text" class="form-control" #tiktok id="tiktok" placeholder="Tiktok - disabled" disabled autocomplete="off" style="background-color: rgba(0, 0, 0, 0.5); border: none;">
+            <input type="text" class="form-control" #tiktok id="tiktok" placeholder="Tiktok" autocomplete="off" style="background-color: rgba(0, 0, 0, 0.5); border: none;">
           </div>
           <label for="inputTinder" class="col-sm-1 col-form-label" nbTooltip="Posible Tinder Account (Used in tinder module)" nbTooltipStatus="primary" style="text-align: center;"><i class="fas fa-fire fa-2x"></i></label>
           <div class="col-sm-3">

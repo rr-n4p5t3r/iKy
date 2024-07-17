@@ -17,14 +17,14 @@ import { NbDialogService } from '@nebular/theme';
 
 @Component({
   // tslint:disable-next-line: component-selector
-  selector: 'ngx-twitter-timeline',
-  templateUrl: './twitter-timeline.component.html',
-  styleUrls: ['./twitter-timeline.component.scss'],
+  selector: 'ngx-tiktok-timeline',
+  templateUrl: './tiktok-timeline.component.html',
+  styleUrls: ['./tiktok-timeline.component.scss'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TwitterTimelineComponent extends BaseChartComponent implements OnInit, AfterViewInit {
-  @ViewChild('nbCardTwitterTimeline', { static: true }) private cardContainer: ElementRef;
+export class TiktokTimelineComponent extends BaseChartComponent implements OnInit, AfterViewInit {
+  @ViewChild('nbCardTiktokTimeline', { static: true }) private cardContainer: ElementRef;
   @Input() autoScale = true;
   @Input() schemeType: string = 'ordinal';
   @Input() valueDomain: number[];
@@ -43,7 +43,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
 
   @Input() data: any;
 
-  twitterTimeline: any;
+  tiktokTimeline: any;
   series: any;
   results: any;
   res_date: any;
@@ -83,16 +83,18 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
 
   ngOnInit() {
       this.card = this.cardContainer.nativeElement;
-      console.log('Twitter Timeline Component');
+      this.tiktokTimeline = this.data.result[4].graphic[9].tiktime;
+      console.log('Tiktok Timeline Component', this.tiktokTimeline);
   }
 
   ngAfterViewInit() {
       this.width = this.cardContainer.nativeElement.parentNode.clientWidth;
       this.height = this.cardContainer.nativeElement.parentNode.clientHeight;
-      console.log('Twitter Timeline Component');
+      console.log('Tiktok Timeline Component card', this.width, this.height);
 
-      this.res_date = this.twitterTimelineConvert();
-      this.twitterTimeline = this.res_date;
+      this.res_date = this.tiktokTimelineConvert();
+      this.tiktokTimeline = this.res_date;
+      console.log('Tiktok Timeline Component', this.tiktokTimeline);
 
       // console.log('!!! RESULT DATE en init', this.res_date);
       // console.log('!!! Width', this.width);
@@ -136,12 +138,12 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
     this.update();
   }
 
-  twitterTimelineConvert(): SingleSeries {
+  tiktokTimelineConvert(): SingleSeries {
     const res_conv: SingleSeries = [];
 
-    // console.log('!!! DATA', this.data.result[4].graphic[10].time);
+    // console.log('!!! DATA', this.data.result[4].graphic[9].tiktime);
 
-    for (const d of this.data.result[4].graphic[10].time) {
+    for (const d of this.data.result[4].graphic[9].tiktime) {
       res_conv.push({
         name: new Date(d.name),
         value: d.value,
@@ -151,10 +153,10 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
   }
 
   update(): void {
-    // this.series = this.twitterTimeline;
+    // this.series = this.tiktokTimeline;
     //  console.log("!!!!! RESULT - Update - Prev", this.results);
-    //  this.results = this.twitterTimelineBarData();
-    //  this.series = this.twitterTimelineBarData();
+    //  this.results = this.tiktokTimelineBarData();
+    //  this.series = this.tiktokTimelineBarData();
     this.results = this.res_date;
     //  console.log("!!!!! RESULT - Update - Prev 2", this.results);
     super.update();
@@ -172,7 +174,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
       legendType: this.schemeType,
     });
 
-    console.log('!!!!! DIMS Prev', this.dims);
+    // console.log('!!!!! DIMS Prev', this.dims);
     if (this.large) {
         this.dims['height'] = this.height * 1.6;
         this.dims['width'] = this.width * 1.6;
@@ -269,6 +271,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
       }
     }
     // console.log('!!! getYDomain - domain', domain);
+
 
     let min = Math.min(...domain);
     const max = Math.max(...domain);

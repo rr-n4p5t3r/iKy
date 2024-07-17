@@ -24,7 +24,7 @@ def get_config():
                           'modules.usersearch.usersearch_tasks',
                           'modules.socialscan.socialscan_tasks',
                           'modules.instagram.instagram_tasks',
-                          # 'modules.tiktok.tiktok_tasks',
+                          'modules.tiktok.tiktok_tasks',
                           'modules.sherlock.sherlock_tasks',
                           'modules.holehe.holehe_tasks',
                           'modules.search.search_tasks',

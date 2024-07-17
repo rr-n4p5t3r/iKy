@@ -1,18 +1,26 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-import time
+import os
 import sys
-import traceback
 import json
-import requests
-from bs4 import BeautifulSoup
-import random
+import time
+import subprocess
+from datetime import datetime, timedelta
+import traceback
+import browser_cookie3
+import glob
+from TikTokApi import TikTokApi
+import asyncio
+from collections import Counter
+
 
 try:
     from factories._celery import create_celery
     from factories.application import create_application
+    from factories.configuration import api_keys_search
     from factories.iKy_functions import analize_rrss
+    from factories.iKy_functions import location_geo
     from celery.utils.log import get_task_logger
     celery = create_celery(create_application())
 except ImportError:
@@ -20,85 +28,168 @@ except ImportError:
     sys.path.append('../../')
     from factories._celery import create_celery
     from factories.application import create_application
+    from factories.configuration import api_keys_search
     from factories.iKy_functions import analize_rrss
+    from factories.iKy_functions import location_geo
     from celery.utils.log import get_task_logger
     celery = create_celery(create_application())
 
 
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
 logger = get_task_logger(__name__)
 
 
-def p_tiktok(username, from_m="Initial"):
+def get_twitter_cookies(cookie_keys):
+    # Try to get cookie from browser
+    ref = ["chromium", "opera", "edge", "firefox", "chrome", "brave"]
+    index = 0
+    json_cookie = {}
+    found = False
+    for cookie_fn in [
+        browser_cookie3.chromium,
+        browser_cookie3.opera,
+        browser_cookie3.edge,
+        browser_cookie3.firefox,
+        browser_cookie3.chrome,
+        browser_cookie3.brave,
+    ]:
+        try:
+            for cookie in cookie_fn(domain_name=""):
+
+                if ('tiktok.com' in cookie.domain):
+
+                    # print(f"COOKIE - {ref[index]}: {cookie}")
+                    if (cookie.name in cookie_keys and not cookie.is_expired()):
+                        json_cookie['browser'] = ref[index]
+                        json_cookie[cookie.name] = cookie.value
+                        json_cookie[cookie.name + '_expires'] = cookie.expires
+
+                # Check
+                found = True
+                for key in cookie_keys:
+                    if (json_cookie.get(key, "") == ""):
+                        found = False
+                        break
+
+        except Exception as e:
+            print(e)
+
+        index += 1
+
+        if (found):
+            break
+
+    return {"found": found, "cookies": json_cookie}
+
+
+def get_browser_paths():
+    if sys.platform == 'win32':
+        base_path = os.path.expanduser('~\\AppData\\Local\\ms-playwright')
+    elif sys.platform == 'darwin':
+        base_path = os.path.expanduser('~/Library/Caches/ms-playwright')
+    else:
+        base_path = os.path.expanduser('~/.cache/ms-playwright')
+
+    return {
+        'chromium': os.path.join(base_path, 'chromium-*'),
+        'firefox': os.path.join(base_path, 'firefox-*'),
+        'webkit': os.path.join(base_path, 'webkit-*')
+    }
+
+
+def check_browsers_installed():
+    browser_paths = get_browser_paths()
+    print(f"PATHS: {browser_paths}")
+    for browser, path in browser_paths.items():
+        if not any(os.path.exists(p) for p in glob.glob(path)):
+            return False
+    return True
+
+
+def run_command(command):
+    result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+    print(result.stdout)
+    if result.stderr:
+        print(result.stderr)
+
+
+def install_playwright():
+    if not check_browsers_installed():
+        print("Installing Playwright and browsers...")
+        run_command('pip install playwright')
+        run_command('playwright install')
+    else:
+        print("Browsers already installed.")
+
+
+async def get_user_info(ms_token, username, num=5):
+    async with TikTokApi() as api:
+        await api.create_sessions(ms_tokens=[ms_token], num_sessions=1, sleep_after=3)
+        try: 
+            user = api.user(username)
+            user_data = await user.info()
+        except KeyError as e:
+            if e.args[0] == 'user':
+                raise Exception("iKy - User Not Found")
+            else:
+                raise e
+        except Exception as e:
+            raise e
+
+        user_videos = []
+        async for video in user.videos(count=num):
+            user_videos.append(video.as_dict)
+    
+        return user_data, user_videos
+
+
+def run_get_user_info(ms_token, username, num=5):
+    return asyncio.run(get_user_info(ms_token, username, num))
+
+
+def p_tiktok(username, num, from_m="Initial"):
     """ Task of Celery that get info from tiktok"""
 
-    user_agents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 5.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-        'Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)',
-        'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko',
-        'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)',
-        'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko',
-        'Mozilla/5.0 (Windows NT 6.2; WOW64; Trident/7.0; rv:11.0) like Gecko',
-        'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko',
-        'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0; Trident/5.0)',
-        'Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko',
-        'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)',
-        'Mozilla/5.0 (Windows NT 6.1; Win64; x64; Trident/7.0; rv:11.0) like Gecko',
-        'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)',
-        'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)',
-        'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)'
-    ]
+    # Code to develop the frontend without burning APIs
+    cd = os.getcwd()
+    td = os.path.join(cd, "outputs")
+    output = "output-tiktok.json"
+    file_path = os.path.join(td, output)
 
-    url = "https://www.tiktok.com/@%s" % username
-    req = requests.get(url, headers={'User-Agent': random.choice(user_agents)})
-    # soup = BeautifulSoup(req.text, "html.parser")
-    print(req.text)
+    if os.path.exists(file_path):
+        logger.warning(f"Developer frontend mode - {file_path}")
+        try:
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+            return data
+        except json.JSONDecodeError:
+            logger.error(f"Developer mode ERROR")
 
-    try:
+    raw_node = []
 
-        # r = requests.get(url, headers=headers)
-        if(req.status_code == 200 and req.text):
-            soup = BeautifulSoup(req.text, 'html.parser')
-            data_j = soup.find(id="__NEXT_DATA__").string
-            data = json.loads(data_j)
-            user_info = data['props']['pageProps']['userInfo']
+    # INFO: Get cookies
+    cookie_keys = ["msToken"]
+    json_cookies = get_twitter_cookies(cookie_keys)
+    if json_cookies["found"]:
+        logger.info("Tiktok cookies found")
+        ms_token = json_cookies["cookies"]["msToken"]
+    else:
+        raise Exception("iKy - Missing cookie msToken. Login to your tiktok account and retry")
 
-            unique_id = user_info['user']['id']
-            nickname = user_info['user']['nickname']
-            avatar = user_info['user']['avatarLarger']
-            signature = user_info['user']['signature']
-            verified = user_info['user']['verified']
-            secret = user_info['user']['secret']
-            open_favorite = user_info['user']['openFavorite']
-            following_count = user_info['stats']['followingCount']
-            follower_count = user_info['stats']['followerCount']
-            video_count = user_info['stats']['videoCount']
-            digg_count = user_info['stats']['diggCount']
-            heart_count = user_info['stats']['heartCount']
-        elif("find this account" in req.text):
-            raise RuntimeError('Tiktok user don\'t exist') 
-        else:
-            raise RuntimeError('Tiktok module don\'t work') 
+    # INFO: Install playright 
+    logger.info("Installing playright")
+    install_playwright()
 
-        # Raw Array
-        raw_node = {"Profile": user_info}
+    user_data, user_videos = run_get_user_info(ms_token, username, num)
 
-    except Exception:
-        if("find this account" in req.text):
-            raise RuntimeError('Tiktok user don\'t exist') 
-        else:
-            raise RuntimeError('Tiktok module don\'t work') 
+    # with open(f"./{username}-user.json", 'w', encoding='utf-8') as file_user:
+    #     json.dump(user_data, file_user, ensure_ascii=False, indent=4)
+    # with open(f"./{username}-videos.json", 'w', encoding='utf-8') as file_video:
+    #     json.dump(user_videos, file_video, ensure_ascii=False, indent=4)
+
+    # with open(f"./{username}-user.json", 'r', encoding='utf-8') as file_user:
+    #     user_data = json.load(file_user)
+    # with open(f"./{username}-videos.json", 'r', encoding='utf-8') as file_video:
+    #     user_videos = json.load(file_video)
 
     # Total
     total = []
@@ -110,190 +201,375 @@ def p_tiktok(username, from_m="Initial"):
     else:
         total.append({'validation': 'soft'})
 
-    # Graphic Array
-    graphic = []
+    if (raw_node == []):
+        # Graphic Array
+        graphic = []
+        photos = []
 
-    # Profile Array
-    profile = []
-    presence = []
+        # Profile Array
+        presence = []
+        profile = []
 
-    # Timeline Array
-    timeline = []
-    tasks = []
+        # Timeline Array
+        timeline = []
 
-    # Gather Array
-    gather = []
-
-    link = "Tiktok"
-    gather_item = {"name-node": "Tiktok", "title": "Tiktok",
-                   "subtitle": "", "icon": "fas fa-play-circle",
-                   "link": link}
-    gather.append(gather_item)
-
-    if ('status' not in raw_node):
         # Gather Array
-        social = []
+        gather = []
 
-        gather_item = {"name-node": "Tiktokname", "title": "Name",
-                       "subtitle": nickname,
-                       "icon": "fas fa-user",
+        # Tasks Array
+        tasks = []
+
+        link = "Tiktok"
+        gather_item = {"name-node": "Tiktok", "title": "tiktok",
+                       "subtitle": "", "icon": "fab fa-tiktok",
                        "link": link}
         gather.append(gather_item)
-        profile_item = {'name': nickname}
+
+        gather_item = {"name-node": "Tikname", "title": "Name",
+                       "subtitle": user_data['userInfo']['user']['nickname'],
+                       "icon": "fas fa-user",
+                       "link": link}
+        profile_item = {'name': user_data['userInfo']['user']['nickname']}
         profile.append(profile_item)
-
-        gather_item = {"name-node": "TiktokVideos", "title": "Videos",
-                       "subtitle": video_count,
-                       "icon": "fas fa-film", "link": link}
         gather.append(gather_item)
 
-        gather_item = {"name-node": "TiktokFollowers", "title": "Followers",
-                       "subtitle": follower_count,
+        gather_item = {"name-node": "TikPosts", "title": "Posts",
+                       "subtitle": user_data['userInfo']['stats']['videoCount'],
+                       "icon": "fas fa-photo-video", "link": link}
+        gather.append(gather_item)
+
+
+        gather_item = {"name-node": "TikFollowers", "title": "Followers",
+                       "subtitle": user_data['userInfo']['stats']['followerCount'],
                        "icon": "fas fa-users", "link": link}
         gather.append(gather_item)
 
-        gather_item = {"name-node": "TiktokFollowing", "title": "Following",
-                       "subtitle": following_count,
+        gather_item = {"name-node": "TikFollowing", "title": "Following",
+                       "subtitle": user_data['userInfo']['stats']['followingCount'],
                        "icon": "fas fa-users", "link": link}
         gather.append(gather_item)
 
-        gather_item = {"name-node": "TiktokAvatar", "title": "Avatar",
-                       "picture": avatar,
+        gather_item = {"name-node": "TikAvatar", "title": "Avatar",
+                       "picture": user_data['userInfo']['user']['avatarLarger'],
                        "subtitle": "",
                        "link": link}
         gather.append(gather_item)
-        profile_item = {'photos': [{"picture": avatar,
-                                    "title": "Tiktok"}]}
+        profile_item = {'photos': [{"picture": user_data['userInfo']['user']['avatarLarger'],
+                                    "title": "tiktok"}]}
         profile.append(profile_item)
 
-        # gather_item = {"name-node": "TikTokSignature",
-        #                "title": "Name",
-        #                "subtitle": signature,
-        #                "icon": "fas fa-signature",
-        #                "link": link}
-        # gather.append(gather_item)
+        try:
+            if user_data["user"]["signature"]:
+                gather_item = {"name-node": "tikBio", "title": "Bio",
+                               "subtitle": user_data["user"]["signature"],
+                               "icon": "fas fa-heart",
+                               "link": link}
+                gather.append(gather_item)
 
-        gather_item = {"name-node": "TikTokId",
-                       "title": "Name",
-                       "subtitle": unique_id,
-                       "icon": "fas fa-id-card",
+                profile_item = {'bio': user_data["user"]["signature"]}
+                profile.append(profile_item)
+
+                analyze = analize_rrss(user_data["user"]["signature"])
+                for item in analyze:
+                    if(item == 'url'):
+                        for i in analyze['url']:
+                            profile.append(i)
+                    if(item == 'tasks'):
+                        for i in analyze['tasks']:
+                            tasks.append(i)
+        except Exception:
+            pass
+
+        try:
+            if user_data["userInfo"]["user"]["bioLink"]["link"]:
+                profile.append({"url": user_data["userInfo"]["user"]["bioLink"]["link"]})
+        except Exception:
+            pass
+
+        gather_item = {"name-node": "TikFriend", "title": "Friends",
+                       "subtitle": user_data['userInfo']['stats']['friendCount'],
+                       "icon": "fas fa-handshake",
                        "link": link}
         gather.append(gather_item)
 
-        gather_item = {"name-node": "TiktokBio", "title": "Bio",
-                       "subtitle": signature,
-                       "icon": "fas fa-heartbeat",
-                       "link": link}
-        gather.append(gather_item)
-        profile.append({'bio': signature})
-        analyze = analize_rrss(signature)
-        for item in analyze:
-            if(item == 'url'):
-                for i in analyze['url']:
-                    profile.append(i)
-            if(item == 'email'):
-                for i in analyze['email']:
-                    profile.append(i)
-            if(item == 'tasks'):
-                for i in analyze['tasks']:
-                    tasks.append(i)
+        try:
+            timeline_item = {"date": datetime.utcfromtimestamp(int(user_data['userInfo']['user']['nickNameModifyTime'])).strftime("%Y-%m-%d"),
+                             "action": "tiktok : Nickname modified",
+                             "icon": "fa-tiktok"}
+            timeline.append(timeline_item)
+        except Exception:
+            pass
 
-        gather_item = {"name-node": "TiktokURL", "title": "URL",
-                       "subtitle": url,
-                       "icon": "fas fa-code",
-                       "link": link}
-        gather.append(gather_item)
-
-        gather_item = {"name-node": "TiktokUsername", "title": "Username",
-                       "subtitle": username,
-                       "icon": "fas fa-user",
-                       "link": link}
-        gather.append(gather_item)
-
-        gather_item = {"name-node": "TiktokVerified",
-                       "title": "Verified Account",
-                       "subtitle": verified,
-                       "icon": "fas fa-certificate",
-                       "link": link}
-        gather.append(gather_item)
-
-        gather_item = {"name-node": "TiktokHeart",
-                       "title": "Hearts",
-                       "subtitle": heart_count,
+        gather_item = {"name-node": "TikHeart", "title": "Likes",
+                       "subtitle": user_data['userInfo']['stats']['heartCount'],
                        "icon": "fas fa-heart",
                        "link": link}
         gather.append(gather_item)
 
-        gather_item = {"name-node": "TiktokDigg",
-                       "title": "Digg",
-                       "subtitle": digg_count,
-                       "icon": "fas fa-thumbs-up",
+        gather_item = {"name-node": "TikPrivate", "title": "Private Account",
+                       "subtitle": user_data['userInfo']['user']['privateAccount'],
+                       "icon": "fas fa-user-shield",
                        "link": link}
         gather.append(gather_item)
 
-        social_item = {"name": "tiktok",
-                       "url": url,
-                       "source": "TikTok",
-                       "icon": "fas fa-play-circle",
+        gather_item = {"name-node": "TikUsername", "title": "Username",
+                       "subtitle": user_data['userInfo']['user']['uniqueId'],
+                       "icon": "fas fa-user",
+                       "link": link}
+        gather.append(gather_item)
+
+        gather_item = {"name-node": "TiktUserID", "title": "UserID",
+                       "subtitle": user_data['userInfo']['user']['id'],
+                       "icon": "fas fa-user-circle",
+                       "link": link}
+        gather.append(gather_item)
+
+        gather_item = {"name-node": "TiktBuss", "title": "Bussiness Account",
+                       "subtitle": user_data['userInfo']['user']['commerceUserInfo']['commerceUser'],
+                       "icon": "fas fa-building",
+                       "link": link}
+        gather.append(gather_item)
+
+        gather_item = {"name-node": "TiktVerified",
+                       "title": "Verified Account",
+                       "subtitle": user_data['userInfo']['user']['verified'],
+                       "icon": "fas fa-certificate",
+                       "link": link}
+        gather.append(gather_item)
+
+        gather_item = {"name": "tiktok",
+                       "url": "https://tiktok.com/@" + username,
+                       "icon": "fab fa-tiktok",
+                       "source": "tiktok",
                        "username": username}
-        social.append(social_item)
-        profile.append({"social": social})
-        profile_item = {"username": username}
-        profile.append(profile_item)
+        profile.append({"social": [gather_item]})
+
+        # Geo and Bar
+        stop = 0
+        captions = []
+        mentions = []
+        mentions_temp = []
+        hashtags = []
+        hashtags_temp = []
+        tagged = []
+        tagged_temp = []
+        tagged = []
+        lk_cm = []
+        s_cl = []
+        s_cm = []
+        s_lk = []
+        s_pl = []
+        s_rp = []
+        s_sh = []
+        week_temp = []
+        hour_temp = []
+        t_timeline = []
+
+        # Hashtag_temp
+        # Mention_temp
+
+        link = "tiktok"
+        photos_item = {"name-node": "tiktok", "title": "tiktok",
+                       "subtitle": "", "icon": "fab fa-tiktok",
+                       "link": link}
+        photos.append(photos_item)
+
+        logger.info("Begin - Getting post information")
+        # Sort Array
+        user_videos = sorted(user_videos, key=lambda x: x['createTime'])
+
+        for post in user_videos:
+            # Exclude pinned videos
+            try:
+                if (post['isPinnedItem']):
+                    continue
+            except Exception:
+                pass
+
+            s_cl.append({"name": str(stop), "value": str(post["statsV2"]["collectCount"])})
+            s_cm.append({"name": str(stop), "value": str(post["statsV2"]["commentCount"])})
+            s_lk.append({"name": str(stop), "value": str(post["statsV2"]["diggCount"])})
+            s_pl.append({"name": str(stop), "value": str(post["statsV2"]["playCount"])})
+            s_rp.append({"name": str(stop), "value": str(post["statsV2"]["repostCount"])})
+            s_sh.append({"name": str(stop), "value": str(post["statsV2"]["shareCount"])})
+
+            # Hashtags
+            try:
+                for h in post["textExtra"]:
+                    hashtags_temp.append(h["hashtagName"])
+            except Exception:
+                pass
+
+    #         # Mentions
+    #         for m in post.caption_mentions:
+    #             mentions_temp.append(m)
+    #         # Tagged users
+    #         for u in post.tagged_users:
+    #             tagged_temp.append(u)
+            # Captions
+            captions.append(post["desc"])
+
+            # post_date = datetime.strptime(post.date, "%Y-%m-%d %H:%M:%S")
+            week_temp.append(datetime.utcfromtimestamp(int(post['createTime'])).strftime("%A"))
+            # week_temp.append(post["createTime"].strftime("%A"))
+            # INFO: For hours you must work with date_utc
+            # hour_temp.append(post["createTime"].strftime("%H"))
+            hour_temp.append(datetime.utcfromtimestamp(int(post['createTime'])).strftime("%H"))
+
+            photos_item = {"name-node": "TikTok" + str(stop),
+                           "title": "Video" + str(stop),
+                           "picture": post["video"]["cover"],
+                           "subtitle": "",
+                           "link": link}
+            photos.append(photos_item)
+
+            created_at = datetime.utcfromtimestamp(int(post['createTime'])).strftime("%Y-%m-%d")
+
+            # Timeline
+            t_timeline.append({"name": created_at, "value": 1})
+
+            stop += 1
+
+        # LastPost
+        timeline_item = {"date": t_timeline[-1]["name"],
+                         "action": "Tiktok : Last Post",
+                         "icon": "fa-tiktok"}
+        timeline.append(timeline_item)
+
+        # Timeline
+        start_date = datetime.strptime(t_timeline[0]['name'], '%Y-%m-%d')
+        end_date = datetime.strptime(t_timeline[-1]['name'], '%Y-%m-%d')
+        delta_days = (end_date - start_date).days
+
+        tiktok_time = []
+        for i in range(delta_days + 1):
+            current_date = (start_date + timedelta(days=i)).strftime('%Y-%m-%d')
+            record_count = sum(1 for item in t_timeline if item['name'] == current_date)
+            tiktok_time.append({'name': current_date, 'value': record_count})
+
+        # Likes, comments (continue)
+        lk_cm.append({"name": "Likes", "series": s_lk})
+        lk_cm.append({"name": "Comments", "series": s_cm})
+        lk_cm.append({"name": "Collect", "series": s_cl})
+        lk_cm.append({"name": "Play", "series": s_pl})
+        lk_cm.append({"name": "Repost", "series": s_rp})
+        lk_cm.append({"name": "Shared", "series": s_sh})
+
+        # Hashtags (continue)
+        hashtag_counter = Counter(hashtags_temp)
+        for k, v in hashtag_counter.items():
+            hashtags.append({"label": k, "value": v})
+    #     # Mentions (continue)
+    #     mention_counter = Counter(mentions_temp)
+    #     for k, v in mention_counter.items():
+    #         mentions.append({"label": k, "value": v})
+    #     # Tagged (continue)
+    #     tagged_counter = Counter(tagged_temp)
+    #     for k, v in tagged_counter.items():
+    #         tagged.append({"label": k, "value": v})
+
+        # hourset
+        hourset = []
+        hournames = '00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23'.split()
+
+        twCounter = Counter(hour_temp)
+        tgdata = twCounter.most_common()
+        tgdata = sorted(tgdata)
+        e = 0
+        for g in hournames:
+            if (e >= len(tgdata)):
+                hourset.append({"name": g, "value": 0})
+            elif (g < tgdata[e][0]):
+                hourset.append({"name": g, "value": 0})
+            elif (g == tgdata[e][0]):
+                hourset.append({"name": g, "value": int(tgdata[e][1])})
+                e += 1
+
+        # weekset
+        weekset = []
+        weekdays = 'Monday Tuesday Wednesday Thursday Friday Saturday Sunday'.split()
+        wdCounter = Counter(week_temp)
+        wddata = wdCounter.most_common()
+        wddata = sorted(wddata)
+        y = []
+        c = 0
+        for z in weekdays:
+            try:
+                weekset.append({"name": z, "value": int(wddata[c][1])})
+            except Exception:
+                weekset.append({"name": z, "value": 0})
+            c += 1
+        wddata = y
+
+        children = []
+        children.append({"name": "Follower", "total":
+                        str(user_data['userInfo']['stats']['followerCount'])})
+        children.append({"name": "Following", "total":
+                        str(user_data['userInfo']['stats']['followingCount'])})
+        children.append({"name": "Friends", "total":
+                        str(user_data['userInfo']['stats']['friendCount'])})
+        children.append({"name": "Likes", "total":
+                        str(user_data['userInfo']['stats']['heartCount'])})
+        children.append({"name": "Videos", "total":
+                        str(user_data['userInfo']['stats']['videoCount'])})
+        resume = {"name": "tiktok", "children": children}
 
         presence.append({"name": "tiktok",
                          "children": [
                              {"name": "followers", 
-                              "value": follower_count},
+                              "value": int(user_data['userInfo']['stats']['followerCount'])},
                              {"name": "following", 
-                              "value": following_count},
+                              "value": int(user_data['userInfo']['stats']['followingCount'])},
                          ]})
         profile.append({'presence': presence})
 
-    graphic.append({'tiktok': gather})
-    total.append({'raw': raw_node})
-    total.append({'graphic': graphic})
-    total.append({'profile': profile})
-    total.append({'timeline': timeline})
-    total.append({'tasks': tasks})
+        raw_node = {'user_data': user_data, 'user_video': user_videos}
+        total.append({'raw': raw_node})
+        graphic.append({'tiktok': gather})
+        graphic.append({'postslist': lk_cm})
+        graphic.append({'hashtags': hashtags})
+        graphic.append({'mentions': mentions})
+        graphic.append({'tagged': tagged})
+        graphic.append({'hour': hourset})
+        graphic.append({'week': weekset})
+        graphic.append({'videos': photos})
+        graphic.append({'resume': resume})
+        graphic.append({'tiktime': tiktok_time})
+        total.append({'graphic': graphic})
+        total.append({'profile': profile})
+        total.append({'timeline': timeline})
+        total.append({'tasks': tasks})
 
     return total
 
 
 @celery.task
-def t_tiktok(user):
-    # Variable principal
+def t_tiktok(username):
     total = []
-    # Take initial time
     tic = time.perf_counter()
-
-    # try execution principal function
     try:
-        total = p_tiktok(user)
-    # Error handle
+        total = p_tiktok(username, num=15)
     except Exception as e:
-        # Error description
+        # Check internal error
+        if str(e).startswith("iKy - "):
+            reason = str(e)[len("iKy - "):]
+            status = "Warning"
+        else:
+            reason = str(e)
+            status = "Fail"
+
         traceback.print_exc()
         traceback_text = traceback.format_exc()
-        code = 10
-        if ('Tiktok user don\'t exist' in traceback_text):
-            code = 5
+        total.append({'module': 'tiktok'})
+        total.append({'param': username})
+        total.append({'validation': 'not_used'})
 
-        # Set module name in JSON format
-        total.append({"module": "tiktok"})
-        total.append({"param": user})
-        total.append({"validation": "null"})
-
-        # Set status code and reason
-        status = []
-        status.append(
-            {
-                "code": code,
-                "reason": "{}".format(e),
-                "traceback": traceback_text,
-            }
-        )
-        total.append({"raw": status})
+        raw_node = []
+        raw_node.append({"status": status,
+                         # "reason": "{}".format(e),
+                         "reason": reason,
+                         "traceback": traceback_text})
+        total.append({"raw": raw_node})
 
     # Take final time
     toc = time.perf_counter()
@@ -304,7 +580,8 @@ def t_tiktok(user):
 
 
 def output(data):
-    print(json.dumps(data, ensure_ascii=True, indent=2))
+    print(" ")
+    print(json.dumps(data, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
