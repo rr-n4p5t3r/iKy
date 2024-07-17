@@ -94,7 +94,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
       this.res_date = this.twitterTimelineConvert();
       this.twitterTimeline = this.res_date;
 
-      console.log('!!! RESULT DATE en init', this.res_date);
+      // console.log('!!! RESULT DATE en init', this.res_date);
       // console.log('!!! Width', this.width);
       // console.log('!!! Height', this.height);
       // console.log('!!! yAxis', this.yAxis);
@@ -115,7 +115,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
   openDialog(dialog: TemplateRef<any>) {
     this.dialogService.open(dialog)
       .onClose.subscribe(result => {
-        console.log('Event Close');
+        // console.log('Event Close');
         this.large = false;
         this.update();
       });
@@ -139,7 +139,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
   twitterTimelineConvert(): SingleSeries {
     const res_conv: SingleSeries = [];
 
-    console.log('!!! DATA', this.data.result[4].graphic[10].time);
+    // console.log('!!! DATA', this.data.result[4].graphic[10].time);
 
     for (const d of this.data.result[4].graphic[10].time) {
       res_conv.push({
@@ -180,7 +180,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
         this.dims['height'] = this.height - 130;
         this.dims['width'] = this.width - 100;
     }
-    console.log('!!!!! DIMS Post', this.dims);
+    // console.log('!!!!! DIMS Post', this.dims);
 
     this.xDomain = this.getXDomain();
 
@@ -203,45 +203,45 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
       this.addBrush();
       this.initialized = true;
     }
-    console.log('!!!!! xDomain', this.xDomain);
-    console.log('!!!!! yDomain', this.yDomain);
-    console.log('!!!!! timeScale', this.timeScale);
-    console.log('!!!!! xScale', this.xScale);
-    console.log('!!!!! yScale', this.yScale);
+    // console.log('!!!!! xDomain', this.xDomain);
+    // console.log('!!!!! yDomain', this.yDomain);
+    // console.log('!!!!! timeScale', this.timeScale);
+    // console.log('!!!!! xScale', this.xScale);
+    // console.log('!!!!! yScale', this.yScale);
   }
 
   getXDomain(): any[] {
     const values = [];
 
-    console.log('!!! getXDomain - Input', this.results);
+    // console.log('!!! getXDomain - Input', this.results);
     for (const d of this.results) {
       if (!values.includes(d.name)) {
         values.push(d.name);
       }
     }
-    console.log('!!! getXDomain - values', values);
+    // console.log('!!! getXDomain - values', values);
 
     this.scaleType = this.getScaleType(values);
-    console.log('!!! getXDomain - scaleType', this.scaleType);
+    // console.log('!!! getXDomain - scaleType', this.scaleType);
     let domain = [];
 
     const min = new Date(Math.min(...values));
-    console.log('!!! getXDomain - Min value', min);
+    // console.log('!!! getXDomain - Min value', min);
     min.setHours(0);
     min.setMinutes(0);
     min.setSeconds(0);
 
     const max = new Date(Math.max(...values));
-    console.log('!!! getXDomain - Max value', max);
+    // console.log('!!! getXDomain - Max value', max);
     max.setHours(23);
     max.setMinutes(59);
     max.setSeconds(59);
 
     domain = [min.getTime(), max.getTime()];
-    console.log('!!! getXDomain - domain', domain);
+    // console.log('!!! getXDomain - domain', domain);
 
     this.xSet = values;
-    console.log('!!! getXDomain - xSet', this.xSet);
+    // console.log('!!! getXDomain - xSet', this.xSet);
     return domain;
   }
 
@@ -252,7 +252,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
 
     const domain = [];
 
-    console.log('!!! getYDomain - input', this.results);
+    // console.log('!!! getYDomain - input', this.results);
     for (const d of this.results) {
       if (domain.indexOf(d.value) < 0) {
         domain.push(d.value);
@@ -268,8 +268,7 @@ export class TwitterTimelineComponent extends BaseChartComponent implements OnIn
         }
       }
     }
-    console.log('!!! getYDomain - domain', domain);
-
+    // console.log('!!! getYDomain - domain', domain);
 
     let min = Math.min(...domain);
     const max = Math.max(...domain);
